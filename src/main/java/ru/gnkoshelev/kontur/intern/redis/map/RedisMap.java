@@ -22,6 +22,13 @@ public class RedisMap implements Map<String,String> {
         }
     }
 
+    public RedisMap(String mapId){
+        try (Jedis jedis = jedisPool.getResource()){
+            this.mapId = mapId;
+            jedis.hincrBy("usedMap", mapId, 1);
+        }
+    }
+
     @Override
     public int size() {
         try (Jedis jedis = jedisPool.getResource()) {
@@ -110,13 +117,16 @@ public class RedisMap implements Map<String,String> {
 
     @Override
     protected void finalize() throws Throwable{
-        System.out.println("Try to delete map");
+        System.out.print("Try to delete map: ");
         try (Jedis jedis = jedisPool.getResource()){
             jedis.hincrBy("usedMap", mapId, -1);
 
             if (jedis.hget("usedMap", mapId).equals("0")) {
                 jedis.del(mapId);
                 jedis.hdel("usedMap", mapId);
+                System.out.println(" DELETED");
+            }else{
+                System.out.println(" MAP USED BY ANOTHER CLIENT");
             }
         }finally {
             super.finalize();
