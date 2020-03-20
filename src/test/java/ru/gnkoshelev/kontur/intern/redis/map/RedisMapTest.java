@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+
 public class RedisMapTest {
     Map<String, String> map1;
     Map<String, String> map2;
@@ -65,6 +66,7 @@ public class RedisMapTest {
        Assert.assertEquals(map3.get("LastName"), mapFromRedis.get("LastName"));
        Assert.assertEquals(map3.get("Age"), mapFromRedis.get("Age"));
     }
+
 
     @Test
     public void deleteAfterGCTest() throws Exception{

@@ -4,10 +4,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class RedisMap implements Map<String,String> {
     private JedisPool jedisPool = new JedisPool();
@@ -64,15 +61,20 @@ public class RedisMap implements Map<String,String> {
 
     @Override
     public String put(String key, String value) {
+        if (key == null || value == null) throw new NullPointerException();
         try (Jedis jedis = jedisPool.getResource()) {
-            return String.valueOf(jedis.hset(mapId, key, value));
+            String oldValue = jedis.hget(mapId, key);
+            jedis.hset(mapId, key, value);
+            return oldValue;
         }
     }
 
     @Override
     public String remove(Object key) {
         try (Jedis jedis = jedisPool.getResource()) {
-            return String.valueOf(jedis.hdel(mapId, (String) key));
+            String oldValue = jedis.hget(mapId, (String) key);
+            jedis.hdel(mapId, (String) key);
+            return oldValue;
         }
     }
 
@@ -111,8 +113,19 @@ public class RedisMap implements Map<String,String> {
     @Override
     public Set<Entry<String, String>> entrySet() {
         try (Jedis jedis = jedisPool.getResource()){
-            return new HashSet<>(jedis.hgetAll(mapId).entrySet());
+            Set<Entry<String, String>> entrySet = new HashSet<>();
+            for(Entry<String, String> entry : jedis.hgetAll(mapId).entrySet()){
+                entrySet.add(new RedisEntry(entry.getKey(), entry.getValue(), mapId));
+            }
+            return entrySet;
         }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        Set<Map.Entry<String,String >> t = entrySet();
+        Set<Map.Entry<String,String >> o = ((RedisMap) obj).entrySet();
+        return t.equals(o);
     }
 
     @Override
@@ -130,6 +143,43 @@ public class RedisMap implements Map<String,String> {
             }
         }finally {
             super.finalize();
+        }
+    }
+
+    private static class RedisEntry implements Map.Entry<String, String>{
+
+        String key;
+        String value;
+        String mapId;
+
+        RedisEntry(String key, String value, String mapId){
+            this.value = value;
+            this.key = key;
+            this.mapId = mapId;
+        }
+
+        @Override
+        public String getKey() {
+            return this.key;
+        }
+
+        @Override
+        public String getValue() {
+            return this.value;
+        }
+
+        @Override
+        public String setValue(String s) {
+            Jedis jedis = new Jedis();
+            String oldValue = jedis.hget(mapId, key);
+            jedis.hset(mapId,key,s);
+            this.value = s;
+            return oldValue;
+        }
+
+        @Override
+        public String toString() {
+            return key + " = " + value;
         }
     }
 }
