@@ -6,10 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import redis.clients.jedis.Jedis;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 public class RedisMapTest {
@@ -25,8 +22,8 @@ public class RedisMapTest {
 
         map1.put("one", "1");
 
-        map2.put("one", "ONE");
-        map2.put("two", "TWO");
+        map2.put("1", "ONE");
+        map2.put("2", "TWO");
 
         this.map3 = new RedisMap("redisMap:0");
         map3.put("Name", "Denis");
@@ -51,12 +48,31 @@ public class RedisMapTest {
 
         Set<String> keys2 = map2.keySet();
         Assert.assertEquals(2, keys2.size());
-        Assert.assertTrue(keys2.contains("one"));
-        Assert.assertTrue(keys2.contains("two"));
+        Assert.assertTrue(keys2.contains("1"));
+        Assert.assertTrue(keys2.contains("2"));
 
         Collection<String> values1 = map1.values();
         Assert.assertEquals(1, values1.size());
         Assert.assertTrue(values1.contains("first"));
+    }
+
+    @Test
+    public void copyConstructorTest(){
+        Map<String, String> map = new HashMap<>();
+        map.put("1", "One");
+        map.put("2", "Two");
+        map.put("3", "Three");
+
+        Map<String, String> redisMap = new RedisMap(map);
+
+        Assert.assertEquals(map.size(), redisMap.size());
+
+        for (int i=1; i<4; i++) {
+            Assert.assertEquals(map.get(String.valueOf(i)), redisMap.get(String.valueOf(i)));
+        }
+
+        redisMap = null;
+        System.gc();
     }
 
     @Test
@@ -125,34 +141,42 @@ public class RedisMapTest {
     }
 
     @Test
-    public void putAllTest(){
+    public void putAllTest() {
         Map<String, String> source = new HashMap<>();
-        source.put("three", "THREE");
-        source.put("fourth", "FOURTH");
-        source.put("five", "FIVE");
-        source.put("six", "SIX");
-        source.put("seven", "SEVEN");
+        source.put("3", "THREE");
+        source.put("4", "FOURTH");
+        source.put("5", "FIVE");
+        source.put("6", "SIX");
+        source.put("7", "SEVEN");
 
-        Assert.assertEquals(2,map2.size());
+        Assert.assertEquals(2, map2.size());
         map2.putAll(source);
-        Assert.assertEquals(7,map2.size());
+        Assert.assertEquals(7, map2.size());
         System.out.println(map2.entrySet());
-}
+    }
 
     @Test
     public void entrySetTest(){
         Set<Map.Entry<String, String >> entries = map2.entrySet();
-        Assert.assertEquals(2,map2.size());
+        Assert.assertEquals(2, entries.size());
 
         for(Map.Entry<String, String> entry:entries){
             Assert.assertEquals(map2.get(entry.getKey()), entry.getValue());
+        }
+
+        for(Map.Entry<String, String> entry:entries){
+            entry.setValue("Value");
+        }
+
+        for(int i=1; i<=map2.size(); i++){
+            Assert.assertEquals("Value",map2.get(String.valueOf(i)));
         }
     }
 
     @Test
     public void removeTest(){
         Assert.assertEquals(2,map2.size());
-        map2.remove("one");
+        map2.remove("1");
         Assert.assertEquals(1,map2.size());
     }
 
