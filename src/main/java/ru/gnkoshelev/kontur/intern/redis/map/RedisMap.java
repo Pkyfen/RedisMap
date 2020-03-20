@@ -19,6 +19,16 @@ public class RedisMap implements Map<String,String> {
         }
     }
 
+    public RedisMap(Map<? extends String, ? extends String> m){
+        try (Jedis jedis = jedisPool.getResource()){
+            jedis.incr("mapId");
+            this.mapId = MAP_ID + jedis.get("mapId");
+            jedis.hincrBy("usedMap", mapId, 1);
+            this.putAll(m);
+        }
+
+    }
+
     public RedisMap(String mapId){
         try (Jedis jedis = jedisPool.getResource()){
             this.mapId = mapId;
