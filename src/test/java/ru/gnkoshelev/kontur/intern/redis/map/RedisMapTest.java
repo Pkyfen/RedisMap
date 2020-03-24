@@ -174,6 +174,15 @@ public class RedisMapTest {
     }
 
     @Test
+    public void equalsTest(){
+        Map<String, String> map4 = new RedisMap(map2);
+
+        Assert.assertNotSame(map4, map2);
+        System.out.println(map2.equals(map4));
+        Assert.assertTrue(map2.equals(map4));
+    }
+
+    @Test
     public void removeTest(){
         Assert.assertEquals(2,map2.size());
         map2.remove("1");

@@ -4,7 +4,10 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class RedisMap implements Map<String,String> {
     private JedisPool jedisPool = new JedisPool();
@@ -71,7 +74,6 @@ public class RedisMap implements Map<String,String> {
 
     @Override
     public String put(String key, String value) {
-        if (key == null || value == null) throw new NullPointerException();
         try (Jedis jedis = jedisPool.getResource()) {
             String oldValue = jedis.hget(mapId, key);
             jedis.hset(mapId, key, value);
@@ -133,9 +135,16 @@ public class RedisMap implements Map<String,String> {
 
     @Override
     public boolean equals(Object obj) {
-        Set<Map.Entry<String,String >> t = entrySet();
-        Set<Map.Entry<String,String >> o = ((RedisMap) obj).entrySet();
-        return t.equals(o);
+        if(this.size() != ((RedisMap) obj).size()) return false;
+
+        Set<String> thisKey = keySet();
+        Set<String> objKey = ((RedisMap) obj).keySet();
+        if(!thisKey.containsAll(objKey)) return false;
+
+        Collection<String> thisValue = values();
+        Collection<String> objValue = ((RedisMap) obj).values();
+
+        return thisValue.containsAll(objValue);
     }
 
     @Override
