@@ -11,25 +11,29 @@ import java.util.Set;
 
 public class RedisMap implements Map<String,String> {
     private JedisPool jedisPool = new JedisPool();
-    private final String MAP_ID = "redisMap:";
     private String mapId;
 
     public RedisMap(){
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.incr("mapId");
-            this.mapId = MAP_ID + jedis.get("mapId");
-            jedis.hincrBy("usedMap", mapId, 1);
+            setMapId(jedis);
         }
     }
 
     public RedisMap(Map<? extends String, ? extends String> m){
         try (Jedis jedis = jedisPool.getResource()){
-            jedis.incr("mapId");
-            this.mapId = MAP_ID + jedis.get("mapId");
-            jedis.hincrBy("usedMap", mapId, 1);
+            setMapId(jedis);
             this.putAll(m);
         }
 
+    }
+
+    private void setMapId(Jedis jedis){
+        Long id = jedis.incr("mapId");
+        //mapId - значение из редиса, содержит количество созданных redisMap
+        this.mapId = "redisMap:" + id;
+        jedis.hincrBy("usedMap", mapId, 1);
+        //usedMap - Hashes в редисе, где ключ это id,  а значение - количество приложений
+        //использующие redisMap с данным id
     }
 
     public RedisMap(String mapId){
@@ -143,22 +147,16 @@ public class RedisMap implements Map<String,String> {
 
         Collection<String> thisValue = values();
         Collection<String> objValue = ((RedisMap) obj).values();
-
         return thisValue.containsAll(objValue);
     }
 
     @Override
     protected void finalize() throws Throwable{
-        System.out.print("Try to delete map: ");
         try (Jedis jedis = jedisPool.getResource()){
             jedis.hincrBy("usedMap", mapId, -1);
-
             if (jedis.hget("usedMap", mapId).equals("0")) {
                 jedis.del(mapId);
                 jedis.hdel("usedMap", mapId);
-                System.out.println(" DELETED");
-            }else{
-                System.out.println(" MAP USED BY ANOTHER CLIENT");
             }
         }finally {
             super.finalize();

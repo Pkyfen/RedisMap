@@ -6,7 +6,10 @@ import org.junit.Before;
 import org.junit.Test;
 import redis.clients.jedis.Jedis;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 
 public class RedisMapTest {
@@ -111,7 +114,7 @@ public class RedisMapTest {
           try{
               RedisMap redisMap = new RedisMap("redisMap:1");
               redisMap.put("Test", "1");
-              Thread.sleep(200);
+              Thread.sleep(1000);
               redisMap = null;
               System.gc();;
               Thread.sleep(200);
@@ -136,7 +139,7 @@ public class RedisMapTest {
         new Thread(task1).start();
         new Thread(task2).start();
 
-        Thread.sleep(1000);
+        Thread.sleep(2000);
         Assert.assertNull(jedis.hget("usedMap","redisMap:1"));
     }
 
@@ -178,8 +181,7 @@ public class RedisMapTest {
         Map<String, String> map4 = new RedisMap(map2);
 
         Assert.assertNotSame(map4, map2);
-        System.out.println(map2.equals(map4));
-        Assert.assertTrue(map2.equals(map4));
+        Assert.assertEquals(map2, map4);
     }
 
     @Test
